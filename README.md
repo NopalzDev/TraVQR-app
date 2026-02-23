@@ -4,8 +4,6 @@ TraVQR (QR Code Transaction Verification) is a mobile banking application design
 
 **Project Type:** Final Year Project (FYP)  
 **Program:** Bachelor of Computer Science with Honours (Information Security and Assurance)  
-**University:** Universiti Sains Islam Malaysia (USIM)  
-**Year:** 2025
 
 ## 🚨 Problem Statement
 
