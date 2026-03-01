@@ -1,0 +1,61 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // This rule allows anyone with your Firestore database reference to view, edit,
+    // and delete all data in your Firestore database. It is useful for getting
+    // started, but it is configured to expire after 30 days because it
+    // leaves your app open to attackers. At that time, all client
+    // requests to your Firestore database will be denied.
+    //
+    // Make sure to write security rules for your app before that time, or else
+    // all client requests to your Firestore database will be denied until you Update
+    // your rules
+		
+		
+    // Users can only read and write their own user document
+    // Users collection rules
+    match /users/{userId} {
+      // Anyone authenticated can READ any user document (needed for transfers)
+      allow read: if request.auth != null;
+      
+      // Users can update their own document
+      allow write: if request.auth != null && request.auth.uid == userId;
+      
+      // Special rule: Allow updating account_balance of other users (for transfers)
+      // Only if the balance is INCREASING (receiving money)
+      allow update: if request.auth != null && 
+                       request.auth.uid != userId &&
+                       request.resource.data.account_balance > resource.data.account_balance &&
+                       // Ensure only account_balance is modified
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['account_balance']);
+    }
+    
+    // Transaction rules
+    match /transactions/{transactionId} {
+      // Users can read their own transactions
+      allow read: if request.auth != null && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Users can create transactions if they are the sender, recipient, or it's their own transaction
+      allow create: if request.auth != null && (
+        request.resource.data.userId == request.auth.uid ||
+        request.resource.data.senderId == request.auth.uid ||
+        request.resource.data.recipientId == request.auth.uid
+      );
+      
+      // Don't allow updates or deletes for transaction integrity
+      allow update, delete: if false;
+    }
+    
+    // Login attempts collection (for lockout mechanism)
+		match /login_attempts/{email} {
+  		// Allow anyone to read (needed to check lockout status before authentication)
+  		allow read: if true;
+  
+  		// Allow anyone to write (needed to record failed attempts before authentication)
+  		allow write: if true;
+		}
+  }
+}
